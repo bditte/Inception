@@ -1,52 +1,68 @@
-version: "3.8"
-services:
-: '   db:
-      build: 
-         ./requirements/mariadb/
-      ports:
-         - "3306:3306"
-      networks:
-         - mynet
-      #volumes
-'
-  nginx:
-      build: 
-          ./requirements/nginx
-      container-name:
-          "nginx"
-      ports: 
-        - "443:443"
-      environment:
-        - DOMAIN_NAME=${DOMAIN_NAME}
-        - CERTS_DIR=${CERTS_DIR}
-        - TLS_VERSION=${TLS_VERSION}
-        - PHP_FPM_HOST=${PHP_FPM_HOST}
-        - PHP_FPM_PORT=${PHP_FPM_PORT}
-        - VIRTUAL_PORT=443
-        - VIRTUAL_HOST=${DOMAIN_NAME}
-      
-      restart:
-          always
+version: "3.5"
 
-: '     networks:
-        - mynet '
-
-   wordpress:
-      build: 
-        ./requirements/wordpress
-      container-name:
-        "wordpress"
-      depends-on:
-        - maria-db
-      networks:
-        - mynet
-      volumes:
-        - "~/inception/volumes/wordpress:/var/www/html"
-      restart:
-        always
-: '
 networks:
-   default:
-      name: mynet
-      external: true
-'
+  mynet:
+    name: mynet
+    driver: bridge
+
+services:
+  mariadb:
+    container_name: mariadb
+    build: ./requirements/mariadb/
+    env_file:
+      - .env
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      - mynet
+    restart: always
+
+  wordpress:
+    container_name: wordpress
+    build:  ./requirements/wordpress
+    env_file:
+      - .env
+    depends_on:
+      - mariadb
+    networks:
+      - mynet
+    volumes:
+      - wp:/var/www/wordpress
+    restart:  always
+
+  nginx:
+    container_name: nginx
+    build:  ./requirements/nginx
+    ports: 
+      - "443:443"
+    depends_on:
+      - wordpress
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
+      - TLS_VERSION=${TLS_VERSION}
+      - PHP_FPM_HOST=${PHP_FPM_HOST}
+      - PHP_FPM_PORT=${PHP_FPM_PORT}
+      - VIRTUAL_PORT=443
+      - VIRTUAL_HOST=${DOMAIN_NAME}
+    volumes:
+      - wp:/var/www/wordpress
+    networks:
+      - mynet 
+    restart: always
+
+volumes:
+  wp:
+    driver: local
+    name: wp
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/bditte/data/wordpress
+  db:
+    driver: local
+    name: db
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/bditte/data/mariadb
+
