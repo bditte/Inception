@@ -7,10 +7,9 @@ RUN   mkdir -p /etc/ssl/
 
 EXPOSE 443
 
-COPY  ./config/setup.sh /var/www/
+COPY  ./tools/setup.sh /var/www/
 RUN   chmod 777 /var/www/setup.sh
 
 ENTRYPOINT ["/var/www/setup.sh"]
-
 
 CMD ["nginx", "-g", "daemon off;"]

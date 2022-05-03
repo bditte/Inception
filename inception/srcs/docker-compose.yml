@@ -15,7 +15,7 @@ services:
       - db:/var/lib/mysql
     networks:
       - mynet
-    restart: always
+    restart: on-failure
 
   wordpress:
     container_name: wordpress
@@ -28,7 +28,7 @@ services:
       - mynet
     volumes:
       - wp:/var/www/wordpress
-    restart:  always
+    restart:  on-failure
 
   nginx:
     container_name: nginx
@@ -37,18 +37,13 @@ services:
       - "443:443"
     depends_on:
       - wordpress
-    environment:
-      - DOMAIN_NAME=${DOMAIN_NAME}
-      - TLS_VERSION=${TLS_VERSION}
-      - PHP_FPM_HOST=${PHP_FPM_HOST}
-      - PHP_FPM_PORT=${PHP_FPM_PORT}
-      - VIRTUAL_PORT=443
-      - VIRTUAL_HOST=${DOMAIN_NAME}
+    env_file:
+      - .env
     volumes:
       - wp:/var/www/wordpress
     networks:
       - mynet 
-    restart: always
+    restart: on-failure
 
 volumes:
   wp:
